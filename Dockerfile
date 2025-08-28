@@ -73,10 +73,18 @@ RUN GOARCH=$TARGETARCH go install -ldflags="\
 
 FROM alpine:3.19
 RUN apk add --no-cache ca-certificates iptables iproute2 ip6tables
-RUN rm /sbin/iptables && ln -s /sbin/iptables-legacy /sbin/iptables
-RUN rm /sbin/ip6tables && ln -s /sbin/ip6tables-legacy /sbin/ip6tables
+# RUN rm /sbin/iptables && ln -s /sbin/iptables-legacy /sbin/iptables
+# RUN rm /sbin/ip6tables && ln -s /sbin/ip6tables-legacy /sbin/ip6tables
+
+RUN apk add --no-cache findutils # xargs
+RUN apk add --no-cache bash
+
+COPY scripts/run_and_load_rules.sh /usr/local/bin/entrypoint
+RUN chmod +x /usr/local/bin/entrypoint
 
 COPY --from=build-env /go/bin/* /usr/local/bin/
 # For compat with the previous run.sh, although ideally you should be
 # using build_docker.sh which sets an entrypoint for the image.
 RUN mkdir /tailscale && ln -s /usr/local/bin/containerboot /tailscale/run.sh
+
+CMD /usr/local/bin/entrypoint
