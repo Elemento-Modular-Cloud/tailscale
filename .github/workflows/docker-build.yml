@@ -1,0 +1,34 @@
+name: Deploy custom tailscale image to GHCR
+
+on:
+    push:
+        branches:
+        - main
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    packages: write
+
+jobs:
+    build-and-push:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v4
+              with:
+                token: ${{ secrets.REPO_KEY }}
+                ref: main
+
+            - name: Login to GHCR
+              uses: docker/login-action@v2
+              with:
+                registry: ghcr.io
+                username: ${{ github.actor }}
+                password: ${{ secrets.REPO_KEY }}
+
+            - name: Build and push Docker image
+              run: |
+                OWNER_NAME=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+                docker build . -t ghcr.io/$OWNER_NAME/tailscale:latest
+                docker push ghcr.io/$OWNER_NAME/tailscale:latest
